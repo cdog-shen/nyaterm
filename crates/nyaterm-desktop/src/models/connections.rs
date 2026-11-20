@@ -13,6 +13,7 @@ use super::event_wake::{ANY_INTEREST, EventWake};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum ConnectionKindTab {
+    Acp,
     Ssh,
     Local,
     Telnet,
@@ -25,6 +26,7 @@ pub(crate) enum ConnectionKindTab {
 impl ConnectionKindTab {
     pub(crate) fn label(self) -> &'static str {
         match self {
+            Self::Acp => "ACP",
             Self::Ssh => "SSH",
             Self::Local => "Local",
             Self::Telnet => "Telnet",
@@ -37,6 +39,7 @@ impl ConnectionKindTab {
 
     pub(crate) fn from_connection_type(config: &nyaterm_core::ConnectionType) -> Self {
         match config {
+            nyaterm_core::ConnectionType::Acp { .. } => Self::Acp,
             nyaterm_core::ConnectionType::Ssh { .. } => Self::Ssh,
             nyaterm_core::ConnectionType::LocalTerminal { .. } => Self::Local,
             nyaterm_core::ConnectionType::Telnet { .. } => Self::Telnet,
@@ -85,6 +88,7 @@ impl ConnectionEditorSection {
 
     fn for_kind_all_tabs(kind: ConnectionKindTab) -> &'static [Self] {
         match kind {
+            ConnectionKindTab::Acp => &[Self::Basic],
             ConnectionKindTab::Adb => &[Self::Basic, Self::AndroidScreen],
             ConnectionKindTab::Ssh => &[
                 Self::Basic,

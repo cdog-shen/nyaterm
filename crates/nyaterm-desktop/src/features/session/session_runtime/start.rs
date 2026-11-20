@@ -39,7 +39,8 @@ fn session_start_focus_target(config: &ConnectionType) -> SessionStartFocusTarge
         ConnectionType::Rdp { .. } | ConnectionType::Vnc { .. } => {
             SessionStartFocusTarget::RemoteDesktop
         }
-        ConnectionType::Adb { .. }
+        ConnectionType::Acp { .. }
+        | ConnectionType::Adb { .. }
         | ConnectionType::Ssh { .. }
         | ConnectionType::LocalTerminal { .. }
         | ConnectionType::Telnet { .. }
@@ -186,9 +187,32 @@ impl NyaTermApp {
         let external_rdp =
             matches!(&connection.config, ConnectionType::Rdp { backend, .. } if backend == "mstsc");
         let focus_target = session_start_focus_target(&connection.config);
+        let acp = matches!(&connection.config, ConnectionType::Acp { .. });
         // A connect-time serial dialog owns focus until it resolves.
         if self.continue_saved_connection_start(connection, options, cx) && !external_rdp {
-            self.focus_user_started_session_surface(focus_target, window, cx);
+            if acp {
+                if let Some(id) = self
+                    .session
+                    .active_id()
+                    .filter(|id| self.acp.contains(id))
+                    .map(str::to_owned)
+                {
+                    self.focus_acp_composer(&id, window, cx);
+                    let window = window.window_handle();
+                    let app = cx.weak_entity();
+                    cx.defer(move |cx| {
+                        let _ = window.update(cx, |_, window, cx| {
+                            let _ = app.update(cx, |app, cx| {
+                                if app.session.active_id() == Some(id.as_str()) {
+                                    app.focus_acp_composer(&id, window, cx);
+                                }
+                            });
+                        });
+                    });
+                }
+            } else {
+                self.focus_user_started_session_surface(focus_target, window, cx);
+            }
         }
     }
 
@@ -237,6 +261,29 @@ impl NyaTermApp {
         + 'static,
         cx: &mut Context<Self>,
     ) -> bool {
+        if matches!(connection.config, ConnectionType::Acp { .. }) {
+            if options.mcp_open_operation_id.is_some()
+                || options.suppress_serial_prompt
+                || options.startup_command.is_some()
+                || options.reconnect_session_id.is_some()
+            {
+                let message = "ACP cannot be started by automation or as a terminal".to_string();
+                self.fail_start_preparation(&options, message.clone(), cx);
+                self.complete_mcp_session_open_failure(
+                    options.mcp_open_operation_id.as_deref().unwrap_or(""),
+                    &message,
+                );
+                self.shell.set_status(message);
+                cx.notify();
+                return false;
+            }
+            if self.remote_start_blocked_by_configuration_replacement(cx) {
+                self.fail_start_preparation(&options, "configuration replacement".into(), cx);
+                return false;
+            }
+            self.start_acp_connection(connection, options, cx);
+            return true;
+        }
         if !matches!(connection.config, ConnectionType::LocalTerminal { .. })
             && self.remote_start_blocked_by_configuration_replacement(cx)
         {
@@ -535,6 +582,9 @@ impl NyaTermApp {
         let tab_placement = options.tab_placement;
         let fallback_insert_index = options.insert_index.filter(|_| tab_placement.is_none());
         match connection.config.clone() {
+            ConnectionType::Acp { .. } => {
+                unreachable!("ACP connections do not start terminal sessions")
+            }
             ConnectionType::Adb { .. } => {
                 unreachable!("Android start is routed before credential resolution")
             }

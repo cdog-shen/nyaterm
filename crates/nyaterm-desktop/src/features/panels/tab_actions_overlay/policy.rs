@@ -10,11 +10,13 @@ pub(in crate::features) enum TabSessionCapability {
     Vnc,
     AdbShell,
     AdbView,
+    Acp,
 }
 
 impl TabSessionCapability {
     pub(in crate::features) fn from_launch_config(config: &SessionLaunchConfig) -> Self {
         match config {
+            SessionLaunchConfig::Acp(_) => Self::Acp,
             SessionLaunchConfig::Local(_) => Self::Local,
             SessionLaunchConfig::Ssh(_) => Self::Ssh,
             SessionLaunchConfig::Telnet(_) => Self::Telnet,

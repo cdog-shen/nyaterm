@@ -127,7 +127,13 @@ impl ConnectionEditorValidationError {
             ConnectionEditorValidationError::AndroidDirectoryInvalid => {
                 ConnectionEditorField::WorkingDir
             }
-            ConnectionEditorValidationError::ShellPathRequired => ConnectionEditorField::ShellPath,
+            ConnectionEditorValidationError::ShellPathRequired
+            | ConnectionEditorValidationError::AcpCommandInvalid => {
+                ConnectionEditorField::ShellPath
+            }
+            ConnectionEditorValidationError::AcpWorkingDirectoryInvalid => {
+                ConnectionEditorField::WorkingDir
+            }
             ConnectionEditorValidationError::SerialPortRequired => {
                 ConnectionEditorField::SerialPort
             }

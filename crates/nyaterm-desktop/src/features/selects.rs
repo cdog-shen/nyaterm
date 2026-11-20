@@ -280,6 +280,8 @@ impl NyaTermApp {
                 crate::models::ConnectionKindTab::Serial,
                 crate::models::ConnectionKindTab::Rdp,
                 crate::models::ConnectionKindTab::Vnc,
+                crate::models::ConnectionKindTab::Adb,
+                crate::models::ConnectionKindTab::Acp,
             ]
             .into_iter()
             .find(|kind| kind.label() == value)

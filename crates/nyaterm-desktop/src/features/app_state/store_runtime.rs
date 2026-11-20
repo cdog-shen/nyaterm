@@ -164,6 +164,7 @@ impl NyaTermApp {
         self.android.shutdown();
         #[cfg(windows)]
         let native_hosts = self.remote_desktop.take_native_hosts_for_shutdown();
+        let acp_workers = self.acp.shutdown();
         let session_shutdown = self.session.take_shutdown();
         let frame_worker = self.terminal.take_frame_shutdown();
         let recording_shutdown = self.recording.take_shutdown();
@@ -200,6 +201,9 @@ impl NyaTermApp {
             cx.background_spawn(async move {
                 stop_editor_watchers.await;
                 session_shutdown();
+                for worker in acp_workers {
+                    let _ = worker.join();
+                }
                 if let Some(shutdown) = frame_worker {
                     shutdown();
                 }

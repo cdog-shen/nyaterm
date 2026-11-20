@@ -390,6 +390,7 @@ impl NyaTermApp {
             host_tool_panels,
             remote_desktop: RemoteDesktopFeatureState::new(cx.focus_handle()),
             android: crate::features::android::AndroidFeatureState::new(android_devices),
+            acp: Default::default(),
             translation: TranslationFeatureState::new(translation_settings),
             update,
             cloud_sync: {

@@ -202,6 +202,7 @@ pub fn get_asset_connection_time_ms(value: Option<u64>) -> Option<u64> {
 pub fn format_asset_address(connection: &SavedConnection, labels: &AssetDisplayLabels) -> String {
     match &connection.config {
         ConnectionType::Adb { device, .. } => device.serial(),
+        ConnectionType::Acp { command, .. } => command.clone(),
         ConnectionType::LocalTerminal { .. } => labels.local_machine.clone(),
         ConnectionType::Serial { port_name, .. } => {
             let port = text(port_name);
@@ -345,6 +346,7 @@ pub fn build_asset_search_text(connection: &SavedConnection, group_path: &str) -
 /// The host/username/port fields relevant for search, per connection kind.
 fn connection_address_fields(connection: &SavedConnection) -> (String, String, String) {
     match &connection.config {
+        ConnectionType::Acp { command, .. } => (command.clone(), String::new(), String::new()),
         ConnectionType::Adb { device, .. } => (device.serial(), String::new(), String::new()),
         ConnectionType::Ssh { host, username, .. } => {
             (host.clone(), username.clone(), String::new())

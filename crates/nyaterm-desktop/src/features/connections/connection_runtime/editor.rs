@@ -138,6 +138,12 @@ impl NyaTermApp {
             ConnectionEditorValidationError::ShellPathRequired => {
                 t!("dialog.shellPathRequired").into()
             }
+            ConnectionEditorValidationError::AcpCommandInvalid => {
+                t!("dialog.acpCommandInvalid").into()
+            }
+            ConnectionEditorValidationError::AcpWorkingDirectoryInvalid => {
+                t!("dialog.acpWorkingDirectoryInvalid").into()
+            }
             ConnectionEditorValidationError::SerialPortRequired => {
                 t!("dialog.serialPortRequired").into()
             }
@@ -1068,6 +1074,10 @@ impl NyaTermApp {
             return;
         }
         let draft = self.connection_state.active_editor_draft();
+        if kind == ConnectionKindTab::Acp && draft.as_ref().is_some_and(|draft| draft.defaults_mode)
+        {
+            return;
+        }
         if let Some(current) = draft
             .as_ref()
             .filter(|draft| draft.defaults_mode || draft.id.is_none())
@@ -1132,6 +1142,7 @@ impl NyaTermApp {
             // to be told, or it keeps showing the other protocol's.
             self.connection_state.sync_editor_fields_from_draft(cx);
             let kind_label = match kind {
+                ConnectionKindTab::Acp => "ACP",
                 ConnectionKindTab::Ssh => "SSH",
                 ConnectionKindTab::Local => &t!("dialog.localTerminal"),
                 ConnectionKindTab::Telnet => "Telnet",

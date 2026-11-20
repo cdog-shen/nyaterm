@@ -281,6 +281,7 @@ impl SessionStartFeatureState {
             return id.clone();
         }
         let (kind, ai_execution_profile) = match &connection.config {
+            ConnectionType::Acp { .. } => (SessionKind::Acp, AiExecutionProfile::Disabled),
             ConnectionType::LocalTerminal {
                 ai_execution_profile,
                 ..

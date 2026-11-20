@@ -241,7 +241,7 @@ pub fn resolve_connection_icon(icon_key: Option<&str>, kind: &str) -> IconDef {
 /// and session tabs when no custom icon is selected.
 pub fn default_connection_icon_for_kind(kind: &str) -> IconDef {
     let key = match kind {
-        "Local" => "local",
+        "Local" | "ACP" => "local",
         "Telnet" => "telnet",
         "Serial" => "serial",
         "RDP" => "rdp",
@@ -262,6 +262,14 @@ mod tests {
         CONNECTION_ICON_OPTIONS, LINUX_ICONS, PROTOCOL_ICONS, SERVER_ICONS, SYSTEM_ICONS,
         default_connection_icon_for_kind, lookup, resolve_connection_icon,
     };
+
+    #[test]
+    fn acp_connection_uses_local_agent_icon_by_default() {
+        assert_eq!(
+            default_connection_icon_for_kind("ACP"),
+            default_connection_icon_for_kind("Local")
+        );
+    }
 
     /// Every key the GPUI picker has ever offered. Stored connections carry these
     /// verbatim, so none may stop resolving.

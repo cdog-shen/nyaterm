@@ -1309,6 +1309,7 @@ impl NyaTermApp {
 
 fn session_kind_for_launch_config(config: &SessionLaunchConfig) -> SessionKind {
     match config {
+        SessionLaunchConfig::Acp(_) => SessionKind::Acp,
         SessionLaunchConfig::AdbShell(_) => SessionKind::AdbShell,
         SessionLaunchConfig::AdbFiles(_) => SessionKind::AdbFiles,
         SessionLaunchConfig::AdbScreen(_) => SessionKind::AdbScreen,
@@ -1331,6 +1332,7 @@ fn create_session_from_launch_config(
     launch_config: SessionLaunchConfig,
 ) -> Result<SessionStartSuccess, String> {
     match launch_config {
+        SessionLaunchConfig::Acp(_) => Err("ACP does not use terminal transport".to_string()),
         SessionLaunchConfig::AdbShell(config) => session_manager
             .create_adb_session(nyaterm_transport::adb_shell::AdbShellConfig {
                 name: config.name.clone(),
@@ -1397,6 +1399,7 @@ fn create_session_from_launch_config(
 
 fn launch_config_for_session_info(info: &SessionInfo) -> SessionLaunchConfig {
     match info.kind {
+        SessionKind::Acp => unreachable!("ACP metadata is supplied by its launcher"),
         SessionKind::AdbShell | SessionKind::AdbFiles | SessionKind::AdbScreen => {
             unreachable!("Android metadata is supplied by its launcher")
         }

@@ -899,6 +899,12 @@ impl NyaTermApp {
         session_id: String,
         cx: &mut Context<Self>,
     ) {
+        if self.acp.contains(&session_id) {
+            self.shell
+                .set_status("ACP does not support synchronized input".to_string());
+            cx.notify();
+            return;
+        }
         self.sync_input.ensure_selected_group();
         let Some(added) = self.sync_input.toggle_selected_session(session_id) else {
             self.shell
@@ -941,7 +947,8 @@ impl NyaTermApp {
         self.session.metadata(session_id).is_some_and(|metadata| {
             !matches!(
                 metadata.launch_config,
-                crate::models::SessionLaunchConfig::Rdp(_)
+                crate::models::SessionLaunchConfig::Acp(_)
+                    | crate::models::SessionLaunchConfig::Rdp(_)
                     | crate::models::SessionLaunchConfig::Vnc(_)
                     | crate::models::SessionLaunchConfig::AdbFiles(_)
                     | crate::models::SessionLaunchConfig::AdbScreen(_)

@@ -154,6 +154,7 @@ impl SavedConnection {
 
     pub fn kind_label(&self) -> &'static str {
         match self.config {
+            ConnectionType::Acp { .. } => "ACP",
             ConnectionType::Adb { .. } => "ADB",
             ConnectionType::Ssh { .. } => "SSH",
             ConnectionType::LocalTerminal { .. } => "Local",
@@ -166,6 +167,7 @@ impl SavedConnection {
 
     pub fn endpoint(&self) -> String {
         match &self.config {
+            ConnectionType::Acp { command, .. } => command.clone(),
             ConnectionType::Adb { device, .. } => device.serial(),
             ConnectionType::Ssh {
                 host,
@@ -537,6 +539,55 @@ impl ConnectionCustomIcon {
 #[cfg(test)]
 mod extension_tests {
     use super::SavedConnection;
+    use crate::models::startup::supports_automatic_start;
+    use crate::terminal::connection_input::parse_shell_args;
+
+    #[test]
+    fn acp_connection_round_trips_projects_and_disables_automatic_start() {
+        let raw = serde_json::json!({
+            "id": "acp-test", "name": "Agent", "type": "acp",
+            "command": "npx pi-acp", "working_dir": "/workspace",
+            "future_root": {"keep": true}
+        });
+        let connection: SavedConnection = serde_json::from_value(raw).unwrap();
+        assert_eq!(connection.kind_label(), "ACP");
+        assert_eq!(connection.endpoint(), "npx pi-acp");
+        assert!(!supports_automatic_start(&connection.config));
+        let encoded = serde_json::to_value(connection).unwrap();
+        assert_eq!(encoded["type"], "acp");
+        assert_eq!(encoded["command"], "npx pi-acp");
+        assert_eq!(encoded["working_dir"], "/workspace");
+        assert_eq!(encoded["future_root"]["keep"], true);
+        let old: SavedConnection = serde_json::from_value(serde_json::json!({
+            "id":"old", "name":"Legacy", "type":"ssh", "host":"example.invalid",
+            "future_root":{"keep":1}
+        }))
+        .unwrap();
+        let old = serde_json::to_value(old).unwrap();
+        assert_eq!(old["type"], "ssh");
+        assert_eq!(old["host"], "example.invalid");
+        assert_eq!(old["future_root"]["keep"], 1);
+    }
+
+    #[test]
+    fn acp_connection_command_uses_existing_argument_syntax() {
+        for (command, expected) in [
+            ("npx pi-acp", vec!["npx", "pi-acp"]),
+            ("kimi acp", vec!["kimi", "acp"]),
+            (
+                r#"agent --name "hello world""#,
+                vec!["agent", "--name", "hello world"],
+            ),
+            (
+                r#""C:\Program Files\Agent\agent.exe" C:\work\dir"#,
+                vec![r"C:\Program Files\Agent\agent.exe", r"C:\work\dir"],
+            ),
+        ] {
+            assert_eq!(parse_shell_args(command).unwrap(), expected);
+        }
+        assert!(parse_shell_args("agent \"unfinished").is_err());
+    }
+
     #[test]
     fn defaulted_known_fields_do_not_become_extensions() {
         let mut connection: SavedConnection = serde_json::from_value(serde_json::json!({

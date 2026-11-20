@@ -206,6 +206,7 @@ impl NyaTermApp {
         let metadata = self.session.metadata(&session.id);
         let connection_id = metadata.and_then(|meta| meta.source_connection_id.clone());
         let session_type = match metadata.map(|meta| &meta.launch_config) {
+            Some(SessionLaunchConfig::Acp(_)) => "acp",
             Some(SessionLaunchConfig::Ssh(_)) => "SSH",
             Some(SessionLaunchConfig::Telnet(_)) => "Telnet",
             Some(SessionLaunchConfig::Serial(_)) => "Serial",

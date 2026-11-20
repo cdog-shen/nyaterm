@@ -60,6 +60,14 @@ pub(super) fn session_info_from_metadata(
     metadata: &SessionRuntimeMetadata,
 ) -> SessionInfo {
     match &metadata.launch_config {
+        SessionLaunchConfig::Acp(config) => SessionInfo {
+            id: session_id.to_string(),
+            name: config.name.clone(),
+            kind: SessionKind::Acp,
+            working_dir: None,
+            cols: 0,
+            rows: 0,
+        },
         SessionLaunchConfig::AdbShell(config)
         | SessionLaunchConfig::AdbFiles(config)
         | SessionLaunchConfig::AdbScreen(config) => SessionInfo {
@@ -145,6 +153,13 @@ pub(super) const ACTIVE_HISTORY_LIMIT: usize = 64;
 
 impl SessionFeatureState {
     pub(crate) fn can_transfer_sessions(&self, session_ids: &[String]) -> Result<(), &'static str> {
+        if session_ids.iter().any(|id| {
+            self.metadata.get(id).is_some_and(|metadata| {
+                matches!(metadata.launch_config, SessionLaunchConfig::Acp(_))
+            })
+        }) {
+            return Err("ACP sessions cannot be moved between windows");
+        }
         if self.start.has_pending() {
             return Err("wait for the session connection attempt to finish");
         }
@@ -819,6 +834,7 @@ impl SessionFeatureState {
     pub(in crate::features) fn endpoint(&self, session_id: &str) -> Option<String> {
         let metadata = self.metadata(session_id)?;
         match &metadata.launch_config {
+            SessionLaunchConfig::Acp(_) => None,
             SessionLaunchConfig::AdbShell(config)
             | SessionLaunchConfig::AdbFiles(config)
             | SessionLaunchConfig::AdbScreen(config) => Some(config.device.serial()),

@@ -69,8 +69,10 @@ impl NyaTermApp {
             tab_placement,
             insert_index,
         );
-        self.queue_auto_recording(session_id);
-        self.session.claim_session_events(session_id);
+        if !self.acp.contains(session_id) {
+            self.queue_auto_recording(session_id);
+            self.session.claim_session_events(session_id);
+        }
         self.finish_session_registration(session_id, encoding, is_terminal);
         if let Some(placement) = tab_placement {
             self.shell

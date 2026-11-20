@@ -58,7 +58,7 @@ impl NyaTermApp {
         requested_mode: Option<RecordingMode>,
         cx: &mut Context<Self>,
     ) {
-        if self.remote_desktop.is_session(session_id) {
+        if self.remote_desktop.is_session(session_id) || self.acp.contains(session_id) {
             self.shell
                 .set_status(t!("recording.unsupported").to_string());
             cx.notify();
@@ -259,7 +259,7 @@ impl NyaTermApp {
     }
 
     pub(in crate::features) fn queue_auto_recording(&self, session_id: &str) {
-        if !self.effective_recording_auto_start(session_id) {
+        if self.acp.contains(session_id) || !self.effective_recording_auto_start(session_id) {
             return;
         }
         let Some((context, profile)) = self.recording_profile_for_session(session_id) else {
@@ -471,6 +471,7 @@ fn recording_launch_context(
     launch_config: &SessionLaunchConfig,
 ) -> (String, String, Option<String>, Option<u16>, Option<String>) {
     match launch_config {
+        SessionLaunchConfig::Acp(config) => (config.name.clone(), "acp".into(), None, None, None),
         SessionLaunchConfig::AdbShell(config)
         | SessionLaunchConfig::AdbFiles(config)
         | SessionLaunchConfig::AdbScreen(config) => (

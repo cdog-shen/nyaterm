@@ -353,6 +353,9 @@ impl NyaTermApp {
         session_id: &str,
         cx: &mut Context<Self>,
     ) {
+        if self.acp.contains(session_id) {
+            self.close_acp_session(session_id, cx);
+        }
         // A tmux host closing takes its virtual pane sessions with it —
         self.android.close_view(session_id);
         // detached or not, they only exist as projections of this session.

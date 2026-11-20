@@ -939,7 +939,8 @@ pub(super) fn compute_batch_basis(
     (basis, values, bool_values)
 }
 
-pub(in crate::features) const BATCH_KINDS: [ConnectionBatchKind; 6] = [
+pub(in crate::features) const BATCH_KINDS: [ConnectionBatchKind; 7] = [
+    ConnectionBatchKind::Acp,
     ConnectionBatchKind::Ssh,
     ConnectionBatchKind::Telnet,
     ConnectionBatchKind::Rdp,
@@ -950,6 +951,7 @@ pub(in crate::features) const BATCH_KINDS: [ConnectionBatchKind; 6] = [
 
 pub(in crate::features) fn batch_kind_value(kind: ConnectionBatchKind) -> &'static str {
     match kind {
+        ConnectionBatchKind::Acp => "acp",
         ConnectionBatchKind::Ssh => "ssh",
         ConnectionBatchKind::Telnet => "telnet",
         ConnectionBatchKind::Rdp => "rdp",

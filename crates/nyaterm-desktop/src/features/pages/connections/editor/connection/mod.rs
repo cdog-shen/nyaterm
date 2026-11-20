@@ -16,6 +16,7 @@ use self::selectors::{
 pub(in crate::features::pages::connections) use groups::ordered_connection_groups;
 
 use crate::models::ConnectionEditorFocusTarget;
+mod acp;
 mod android;
 mod authentication;
 mod layout;
@@ -721,8 +722,10 @@ impl NyaTermApp {
                 ConnectionKindTab::Rdp,
                 ConnectionKindTab::Vnc,
                 ConnectionKindTab::Adb,
+                ConnectionKindTab::Acp,
             ]
             .into_iter()
+            .filter(|kind| !editor.defaults_mode || *kind != ConnectionKindTab::Acp)
             .map(|kind| {
                 NyaSelectOption::new(
                     kind.label(),
@@ -1098,6 +1101,9 @@ impl NyaTermApp {
             })
             .when(editor.kind == ConnectionKindTab::Local, |this| {
                 this.child(connection_editor_local_section(section_context, cx))
+            })
+            .when(editor.kind == ConnectionKindTab::Acp, |this| {
+                this.child(acp::connection_editor_acp_section(section_context, cx))
             })
             .when(editor.kind == ConnectionKindTab::Telnet, |this| {
                 this.child(connection_editor_telnet_section(section_context, cx))

@@ -72,6 +72,7 @@ pub(in crate::features) fn docker_compose_project_key(
 
 pub(in crate::features) fn session_kind_label(kind: SessionKind) -> std::borrow::Cow<'static, str> {
     match kind {
+        SessionKind::Acp => "acp".into(),
         SessionKind::LocalPty => "local".into(),
         SessionKind::Ssh => "ssh".into(),
         SessionKind::Telnet => "telnet".into(),

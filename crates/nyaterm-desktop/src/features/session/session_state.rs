@@ -62,6 +62,9 @@ impl NyaTermApp {
         }
 
         match &metadata.launch_config {
+            SessionLaunchConfig::Acp(_) => {
+                details.push((t!("sessionInfo.launch"), "ACP".to_string()));
+            }
             SessionLaunchConfig::AdbShell(config)
             | SessionLaunchConfig::AdbFiles(config)
             | SessionLaunchConfig::AdbScreen(config) => {
@@ -321,7 +324,9 @@ impl NyaTermApp {
         self.session.start.clear_active_selection();
         self.shell.prepare_session_switch();
         // Session switch resets terminal-output credential autofill (Tauri XTerminal remount).
-        self.terminal.activate_shell_editing_session(session_id);
+        if !self.acp.contains(session_id) {
+            self.terminal.activate_shell_editing_session(session_id);
+        }
         self.terminal.reset_assist_for_session_switch();
         let previous_session_id = self.session.active_id_owned();
         let switching_sessions = previous_session_id.as_deref() != Some(session_id);
@@ -334,7 +339,8 @@ impl NyaTermApp {
             }
             self.transfer.clear_pending_cwd_sync();
         }
-        let target_is_rdp = self.remote_desktop.is_session(session_id);
+        let target_is_nonterminal =
+            self.remote_desktop.is_session(session_id) || self.acp.contains(session_id);
         if switching_sessions && let Some(previous_session_id) = previous_session_id.as_deref() {
             self.android.release_inputs(previous_session_id);
             self.release_remote_keys(previous_session_id);
@@ -387,13 +393,15 @@ impl NyaTermApp {
             // Keep favorites map coherent for the active connection without wiping UI.
             self.sync_transfer_browser_favorites_for_active_session();
         }
-        let live_snapshot_missing = if target_is_rdp {
+        let live_snapshot_missing = if target_is_nonterminal {
             false
         } else {
             self.terminal.activate_session_view(session_id)
         };
-        if !target_is_rdp && switching_sessions && self.terminal.input_focus_is_active() {
-            if let Some(previous_session_id) = previous_session_id.as_deref() {
+        if !target_is_nonterminal && switching_sessions && self.terminal.input_focus_is_active() {
+            if let Some(previous_session_id) = previous_session_id.as_deref()
+                && !self.acp.contains(previous_session_id)
+            {
                 self.write_terminal_focus_report_to_session(previous_session_id, false);
             }
             self.write_terminal_focus_report_to_session(session_id, true);
@@ -401,7 +409,7 @@ impl NyaTermApp {
         self.sync_terminal_windows_active_tab(session_id);
         self.sync_terminal_frame_snapshot_priority();
         // Recover paint immediately if this tab was backgrounded without grids.
-        if !target_is_rdp && live_snapshot_missing {
+        if !target_is_nonterminal && live_snapshot_missing {
             self.request_terminal_live_snapshot(session_id);
         }
         if switching_sessions
@@ -442,7 +450,7 @@ impl NyaTermApp {
         session_id: &str,
         cx: &mut Context<Self>,
     ) {
-        if self.remote_desktop.is_session(session_id) {
+        if self.remote_desktop.is_session(session_id) || self.acp.contains(session_id) {
             cx.notify();
             return;
         }

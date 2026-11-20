@@ -907,12 +907,25 @@ impl ConnectionFeatureState {
         let Some(draft) = self.editor.draft.as_ref() else {
             return;
         };
-        for (field, value, _, _) in editor_field_seeds(draft) {
+        for (field, value, _, placeholder) in editor_field_seeds(draft) {
             if field == ConnectionEditorField::Password {
                 continue;
             }
             if let Some(entity) = self.editor.fields.get(&field) {
-                entity.update(cx, |entity, cx| entity.set_content(&value, cx));
+                entity.update(cx, |entity, cx| {
+                    entity.set_content(&value, cx);
+                    if matches!(
+                        field,
+                        ConnectionEditorField::ShellPath | ConnectionEditorField::WorkingDir
+                    ) {
+                        let placeholder = match placeholder {
+                            ConnectionEditorPlaceholder::Empty => Cow::Borrowed(""),
+                            ConnectionEditorPlaceholder::I18n(key) => t!(key),
+                            ConnectionEditorPlaceholder::Literal(value) => Cow::Borrowed(value),
+                        };
+                        entity.set_placeholder(placeholder, cx);
+                    }
+                });
             }
             if let Some(entity) = self.editor.number_fields.get(&field) {
                 entity.update(cx, |entity, cx| entity.set_content(&value, cx));

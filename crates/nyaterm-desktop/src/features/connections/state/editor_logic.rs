@@ -1083,7 +1083,11 @@ pub(super) fn editor_field_seeds(
             ConnectionEditorField::ShellPath,
             draft.shell_path.clone(),
             false,
-            I18n("dialog.shellPathPlaceholder"),
+            if draft.kind == ConnectionKindTab::Acp {
+                Literal("npx pi-acp")
+            } else {
+                I18n("dialog.shellPathPlaceholder")
+            },
         ),
         (
             ConnectionEditorField::ShellArgs,
@@ -1095,7 +1099,15 @@ pub(super) fn editor_field_seeds(
             ConnectionEditorField::WorkingDir,
             draft.working_dir.clone(),
             false,
-            I18n("dialog.workingDirPlaceholder"),
+            if draft.kind == ConnectionKindTab::Acp {
+                Literal(if cfg!(windows) {
+                    r"C:\Projects"
+                } else {
+                    "/workspace"
+                })
+            } else {
+                I18n("dialog.workingDirPlaceholder")
+            },
         ),
         (
             ConnectionEditorField::SerialPort,

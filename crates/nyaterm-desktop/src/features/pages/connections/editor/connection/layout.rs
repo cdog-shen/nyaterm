@@ -163,15 +163,20 @@ pub(super) fn connection_editor_frame(
                         .when(wide, |this| {
                             this.child(
                                 NyaTabs::new("connection-kind-tabs")
-                                    .items([
-                                        NyaTabItem::new("SSH"),
-                                        NyaTabItem::new(local_label),
-                                        NyaTabItem::new("Telnet"),
-                                        NyaTabItem::new(serial_label),
-                                        NyaTabItem::new("RDP"),
-                                        NyaTabItem::new("VNC"),
-                                        NyaTabItem::new("ADB"),
-                                    ])
+                                    .items(
+                                        [
+                                            NyaTabItem::new("SSH"),
+                                            NyaTabItem::new(local_label),
+                                            NyaTabItem::new("Telnet"),
+                                            NyaTabItem::new(serial_label),
+                                            NyaTabItem::new("RDP"),
+                                            NyaTabItem::new("VNC"),
+                                            NyaTabItem::new("ADB"),
+                                            NyaTabItem::new("ACP"),
+                                        ]
+                                        .into_iter()
+                                        .take(if editor.defaults_mode { 7 } else { 8 }),
+                                    )
                                     .selected_index(match editor.kind {
                                         ConnectionKindTab::Ssh => 0,
                                         ConnectionKindTab::Local => 1,
@@ -180,6 +185,7 @@ pub(super) fn connection_editor_frame(
                                         ConnectionKindTab::Rdp => 4,
                                         ConnectionKindTab::Vnc => 5,
                                         ConnectionKindTab::Adb => 6,
+                                        ConnectionKindTab::Acp => 7,
                                     })
                                     .on_select(cx.listener(|this, index, _, cx| {
                                         let kind = match *index {
@@ -189,7 +195,8 @@ pub(super) fn connection_editor_frame(
                                             3 => ConnectionKindTab::Serial,
                                             4 => ConnectionKindTab::Rdp,
                                             5 => ConnectionKindTab::Vnc,
-                                            _ => ConnectionKindTab::Adb,
+                                            6 => ConnectionKindTab::Adb,
+                                            _ => ConnectionKindTab::Acp,
                                         };
                                         this.set_connection_editor_kind(kind, cx);
                                     })),

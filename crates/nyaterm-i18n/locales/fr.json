@@ -1,4 +1,5 @@
 {
+  "acpChat": {"placeholder":"Message à l’agent (Ctrl+Entrée pour envoyer)","closed":"Déconnecté","connecting":"Connexion","loading":"Chargement de la session","cancelling":"Arrêt en cours","running":"En cours","ready":"Prêt","user":"Vous","agent":"Agent","thought":"Raisonnement","plan":"Plan","unknown":"Mise à jour non prise en charge","permission":"Autorisation demandée","send":"Envoyer","stop":"Arrêter","newSession":"Nouvelle session","history":"Historique","historyLoading":"Chargement de l’historique…","historyEmpty":"Aucune session précédente","historyMore":"Charger plus"},
   "terminalCommandOutputCollapsed": "%{count} lignes de sortie repliées",
   "fileSudo": {
     "title": "Autorisation sudo SFTP",
@@ -1190,6 +1191,10 @@
     "shellBash": "Bash",
     "shellCmd": "Invite de commandes",
     "shellCustom": "Personnalisé…",
+    "acpNotAvailable": "Les sessions ACP ne sont pas encore disponibles",
+    "acpCommand": "Commande de l’agent",
+    "acpCommandInvalid": "Saisissez une commande valide avec des guillemets équilibrés",
+    "acpWorkingDirectoryInvalid": "Saisissez un répertoire de travail absolu",
     "shellPath": "Chemin du shell",
     "shellPathPlaceholder": "ex. /bin/zsh ou pwsh.exe",
     "shellPathRequired": "Le chemin du shell est requis",

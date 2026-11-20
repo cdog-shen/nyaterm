@@ -1,4 +1,5 @@
 {
+  "acpChat": {"placeholder":"메시지 입력 (Ctrl+Enter로 전송)","closed":"연결 끊김","connecting":"연결 중","loading":"세션 불러오는 중","cancelling":"중지 중","running":"실행 중","ready":"준비됨","user":"나","agent":"에이전트","thought":"추론","plan":"계획","unknown":"지원하지 않는 업데이트","permission":"권한 요청","send":"전송","stop":"중지","newSession":"새 세션","history":"기록","historyLoading":"기록 불러오는 중…","historyEmpty":"이전 세션 없음","historyMore":"더 불러오기"},
   "terminalCommandOutputCollapsed": "출력 %{count}줄 접힘",
   "fileSudo": {
     "title": "SFTP sudo 인증",
@@ -1190,6 +1191,10 @@
     "shellBash": "Bash",
     "shellCmd": "명령 프롬프트",
     "shellCustom": "사용자 지정...",
+    "acpNotAvailable": "ACP 세션은 아직 사용할 수 없습니다",
+    "acpCommand": "에이전트 실행 명령",
+    "acpCommandInvalid": "따옴표가 짝을 이루는 올바른 명령을 입력하세요",
+    "acpWorkingDirectoryInvalid": "작업 디렉터리의 절대 경로를 입력하세요",
     "shellPath": "셸 경로",
     "shellPathPlaceholder": "예: /bin/zsh 또는 pwsh.exe",
     "shellPathRequired": "셸 경로가 필요합니다",

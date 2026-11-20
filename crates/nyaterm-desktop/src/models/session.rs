@@ -98,6 +98,7 @@ impl StartupCommandAction {
 
 #[derive(Clone)]
 pub(crate) enum SessionLaunchConfig {
+    Acp(AcpSessionConfig),
     AdbShell(AndroidSessionConfig),
     AdbFiles(AndroidSessionConfig),
     AdbScreen(AndroidSessionConfig),
@@ -107,6 +108,12 @@ pub(crate) enum SessionLaunchConfig {
     Serial(SerialSessionConfig),
     Rdp(RdpSessionConfig),
     Vnc(VncSessionConfig),
+}
+
+#[derive(Clone)]
+pub(crate) struct AcpSessionConfig {
+    pub name: String,
+    pub connection: nyaterm_agent_client::acp::AcpConnectionConfig,
 }
 
 #[derive(Clone)]
@@ -126,7 +133,8 @@ impl SessionLaunchConfig {
     pub(crate) fn matches_saved_protocol(&self, config: &ConnectionType) -> bool {
         matches!(
             (self, config),
-            (Self::Local(_), ConnectionType::LocalTerminal { .. })
+            (Self::Acp(_), ConnectionType::Acp { .. })
+                | (Self::Local(_), ConnectionType::LocalTerminal { .. })
                 | (Self::Ssh(_), ConnectionType::Ssh { .. })
                 | (Self::Telnet(_), ConnectionType::Telnet { .. })
                 | (Self::Serial(_), ConnectionType::Serial { .. })
@@ -175,7 +183,7 @@ impl SessionLaunchConfig {
     pub(crate) fn encoding(&self) -> Option<&str> {
         match self {
             Self::AdbShell(_) => Some("UTF-8"),
-            Self::AdbFiles(_) | Self::AdbScreen(_) => None,
+            Self::Acp(_) | Self::AdbFiles(_) | Self::AdbScreen(_) => None,
             Self::Local(config) => Some(&config.encoding),
             Self::Ssh(config) => Some(&config.encoding),
             Self::Telnet(config) => Some(&config.encoding),
@@ -194,7 +202,8 @@ impl SessionLaunchConfig {
         let username = match self {
             Self::Ssh(config) => config.username.as_str(),
             Self::Telnet(config) => config.username.as_str(),
-            Self::Local(_)
+            Self::Acp(_)
+            | Self::Local(_)
             | Self::Serial(_)
             | Self::Rdp(_)
             | Self::Vnc(_)

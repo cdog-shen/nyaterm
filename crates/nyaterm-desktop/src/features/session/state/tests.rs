@@ -32,6 +32,22 @@ use std::sync::{Arc, mpsc};
 use std::time::Instant;
 
 #[test]
+fn acp_saved_start_preparation_disables_terminal_ai_execution() {
+    let connection: nyaterm_core::SavedConnection = serde_json::from_value(serde_json::json!({
+        "id": "acp-test", "name": "ACP", "type": "acp",
+        "command": "agent", "working_dir": "."
+    }))
+    .unwrap();
+    let mut state = SessionStartFeatureState::new();
+    let id = state.begin_saved_preparation(&connection, &Default::default());
+    let (_, pending) = state
+        .pending_entries()
+        .find(|(key, _)| *key == &id)
+        .unwrap();
+    assert_eq!(pending.ai_execution_profile, AiExecutionProfile::Disabled);
+}
+
+#[test]
 fn host_key_prompt_accept_and_reject_restore_terminal_input_focus() {
     let root = TestConfigDir::new("nyaterm-host-key-focus");
     let mut cx = TestAppContext::single();

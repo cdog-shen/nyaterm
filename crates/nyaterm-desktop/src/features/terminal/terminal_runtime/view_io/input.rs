@@ -88,6 +88,10 @@ impl NyaTermApp {
     pub(in crate::features) fn active_terminal_input_blocked(&self) -> bool {
         self.active_workspace_tab()
             .is_some_and(|key| !crate::models::WorkspaceTabId::from_layout_key(&key).is_session())
+            || self
+                .session
+                .active_id()
+                .is_some_and(|id| self.acp.contains(id))
             || self.session.start_has_active_pending()
             || self.session.start_has_active_failed()
     }
@@ -1025,6 +1029,9 @@ impl NyaTermApp {
         bytes: &[u8],
         command: Option<&str>,
     ) -> Result<(), String> {
+        if self.acp.contains(session_id) {
+            return Err("ACP sessions do not accept terminal input".to_string());
+        }
         if self.security.screen_locked() {
             return Err("screen locked".to_string());
         }
@@ -1122,6 +1129,9 @@ impl NyaTermApp {
         session_id: &str,
         bytes: &[u8],
     ) -> Result<(), String> {
+        if self.acp.contains(session_id) {
+            return Err("ACP sessions do not accept terminal input".to_string());
+        }
         self.commands.cancel_staged_quick_command(session_id);
         if self
             .mcp
@@ -1173,6 +1183,9 @@ impl NyaTermApp {
         session_id: &str,
         bytes: &[u8],
     ) -> Result<(), String> {
+        if self.acp.contains(session_id) {
+            return Err("ACP sessions do not accept terminal input".to_string());
+        }
         self.commands.cancel_staged_quick_command(session_id);
         if self
             .mcp
@@ -1279,6 +1292,9 @@ impl NyaTermApp {
         recording_bytes: &[u8],
         literal: bool,
     ) -> Result<(), String> {
+        if self.acp.contains(session_id) {
+            return Err("ACP sessions do not accept terminal input".to_string());
+        }
         if let Some(state) = self.terminal.editing.sessions.get_mut(session_id) {
             state.suggestion_fill = None;
         }
@@ -1340,6 +1356,9 @@ impl NyaTermApp {
         session_id: &str,
         bytes: &[u8],
     ) -> Result<(), String> {
+        if self.acp.contains(session_id) {
+            return Err("ACP sessions do not accept terminal protocol bytes".to_string());
+        }
         let disposition = terminal_wire_write_disposition(TerminalWireWriteKind::ProtocolResponse);
         debug_assert!(!disposition.encode_session_charset);
         debug_assert!(!disposition.record_logical_input);

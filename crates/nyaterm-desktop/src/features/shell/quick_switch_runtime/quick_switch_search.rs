@@ -246,7 +246,8 @@ fn item_endpoint(item: &QuickSwitchItem) -> Option<(&str, u16)> {
                 device: nyaterm_core::models::android::AdbDeviceSelector::Tcp { host, port },
                 ..
             } => Some((host, *port)),
-            ConnectionType::Adb { .. }
+            ConnectionType::Acp { .. }
+            | ConnectionType::Adb { .. }
             | ConnectionType::LocalTerminal { .. }
             | ConnectionType::Serial { .. } => None,
         },

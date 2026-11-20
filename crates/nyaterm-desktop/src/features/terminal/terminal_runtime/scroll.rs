@@ -974,6 +974,11 @@ impl NyaTermApp {
             .collect();
         let has_dirs = paths.iter().any(|p| p.is_dir());
         match kind {
+            Some(SessionKind::Acp) => {
+                self.shell
+                    .set_status("file drop is not supported for ACP sessions".to_string());
+                cx.notify();
+            }
             Some(SessionKind::AdbShell | SessionKind::AdbFiles | SessionKind::AdbScreen) => {
                 self.shell
                     .set_status(rust_i18n::t!("android.uploadUsingBrowser").into_owned());

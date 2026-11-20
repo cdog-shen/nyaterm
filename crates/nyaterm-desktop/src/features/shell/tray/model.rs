@@ -373,6 +373,7 @@ impl TraySnapshot {
 
 fn protocol_key(kind: SessionKind) -> &'static str {
     match kind {
+        SessionKind::Acp => "acp",
         SessionKind::LocalPty => "local",
         SessionKind::Ssh => "ssh",
         SessionKind::Telnet => "telnet",

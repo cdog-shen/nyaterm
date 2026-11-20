@@ -1,3 +1,4 @@
+mod acp;
 mod activation;
 mod ai;
 mod android;

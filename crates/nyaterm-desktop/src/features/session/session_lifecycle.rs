@@ -72,6 +72,12 @@ impl NyaTermApp {
         let workspace_split = self.session.start_take_pending_workspace_split();
 
         match metadata.launch_config_for_restart() {
+            SessionLaunchConfig::Acp(_) => {
+                self.shell
+                    .set_status("ACP duplication is not supported".to_string());
+                cx.notify();
+                return;
+            }
             SessionLaunchConfig::AdbShell(config) => {
                 self.open_android_view(
                     config,
@@ -625,6 +631,10 @@ impl NyaTermApp {
         let source_connection_id = metadata.source_connection_id;
         let ai_execution_profile = metadata.ai_execution_profile;
         match launch_config {
+            SessionLaunchConfig::Acp(_) => {
+                self.shell
+                    .set_status("ACP reconnect is not supported".to_string());
+            }
             SessionLaunchConfig::AdbShell(_)
             | SessionLaunchConfig::AdbFiles(_)
             | SessionLaunchConfig::AdbScreen(_) => {

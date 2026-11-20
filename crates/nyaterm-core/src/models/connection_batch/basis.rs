@@ -46,6 +46,7 @@ pub fn connection_kind_counts(
         }
     }
     [
+        ConnectionBatchKind::Acp,
         ConnectionBatchKind::Ssh,
         ConnectionBatchKind::LocalTerminal,
         ConnectionBatchKind::Telnet,

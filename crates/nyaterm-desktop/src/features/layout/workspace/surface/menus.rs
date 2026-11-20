@@ -63,6 +63,7 @@ fn new_session_recent_connections(connections: &[SavedConnection]) -> Vec<SavedC
 
 fn new_session_connection_protocol(connection: &SavedConnection) -> &'static str {
     match connection.config {
+        ConnectionType::Acp { .. } => "acp",
         ConnectionType::LocalTerminal { .. } => "shell",
         ConnectionType::Telnet { .. } => "telnet",
         ConnectionType::Serial { .. } => "serial",
@@ -340,6 +341,7 @@ impl NyaTermApp {
                     });
                 let icon_kind = connection.map_or_else(
                     || match session.kind {
+                        nyaterm_transport::SessionKind::Acp => "ACP",
                         nyaterm_transport::SessionKind::LocalPty => "Local",
                         nyaterm_transport::SessionKind::Ssh => "SSH",
                         nyaterm_transport::SessionKind::Telnet => "Telnet",

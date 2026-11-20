@@ -1030,6 +1030,13 @@ pub(super) fn connection_detail_rows(
         .unwrap_or_else(|| t!("savedConnections.noDescription").to_string());
 
     let mut rows = match &connection.config {
+        nyaterm_core::ConnectionType::Acp {
+            command,
+            working_dir,
+        } => vec![
+            copyable_text_detail_row(t!("dialog.acpCommand").into_owned(), command),
+            copyable_text_detail_row(t!("dialog.workingDir").into_owned(), working_dir),
+        ],
         nyaterm_core::ConnectionType::Adb {
             device, directory, ..
         } => vec![

@@ -527,6 +527,10 @@ impl Default for TelnetAutoLoginConfig {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ConnectionType {
+    Acp {
+        command: String,
+        working_dir: String,
+    },
     Adb {
         device: AdbDeviceSelector,
         #[serde(default = "default_android_directory")]

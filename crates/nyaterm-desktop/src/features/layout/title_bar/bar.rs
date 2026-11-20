@@ -1164,6 +1164,7 @@ fn current_unix_minute() -> i64 {
 
 fn session_kind_label(kind: SessionKind) -> &'static str {
     match kind {
+        SessionKind::Acp => "ACP",
         SessionKind::LocalPty => "Local",
         SessionKind::Ssh | SessionKind::RawTcp => "SSH",
         SessionKind::Telnet => "Telnet",

@@ -585,6 +585,15 @@ impl NyaTermApp {
                     return;
                 }
             };
+            if self.acp.contains(&session_id) {
+                self.reject_capability(
+                    request,
+                    "unsupported",
+                    "ACP sessions do not support MCP terminal or session operations.",
+                    cx,
+                );
+                return;
+            }
             request.arguments["sessionId"] = Value::String(session_id.clone());
             request.resolved_session_id = Some(session_id.clone());
             if matches!(
@@ -1505,6 +1514,7 @@ fn to_value_string<T: serde::Serialize>(value: T) -> Result<Value, String> {
 
 fn session_kind_name(kind: SessionKind) -> &'static str {
     match kind {
+        SessionKind::Acp => "acp",
         SessionKind::LocalPty => "local",
         SessionKind::Ssh => "ssh",
         SessionKind::Telnet => "telnet",
@@ -1537,7 +1547,9 @@ pub(in crate::features) fn connection_type_name(
         ConnectionType::Telnet { .. } => Some("telnet"),
         ConnectionType::Serial { .. } => Some("serial"),
         ConnectionType::Adb { .. } => Some("adb"),
-        ConnectionType::Rdp { .. } | ConnectionType::Vnc { .. } => None,
+        ConnectionType::Acp { .. } | ConnectionType::Rdp { .. } | ConnectionType::Vnc { .. } => {
+            None
+        }
     }
 }
 

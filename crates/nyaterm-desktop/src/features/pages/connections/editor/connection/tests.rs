@@ -287,6 +287,10 @@ fn ssh_algorithm_lists_keep_rows_full_height_and_scroll_inside_the_viewport() {
 
 fn protocol_selectors(kind: ConnectionKindTab) -> (&'static str, &'static str) {
     match kind {
+        ConnectionKindTab::Acp => (
+            "connection-editor-acp-section",
+            "connection-editor-acp-section",
+        ),
         ConnectionKindTab::Adb => (
             "connection-editor-adb-section",
             "connection-editor-adb-advanced",
@@ -2060,6 +2064,34 @@ fn invalid_hidden_baud_rate_opens_its_picker_and_focuses_the_custom_input(cx: &m
         let input = &state.editor_number_fields()[&ConnectionEditorField::BaudRate];
         assert!(input.read(cx).component_focus_handle(cx).is_focused(window));
     });
+}
+
+#[gpui::test]
+fn acp_editor_shows_command_and_working_directory_only(cx: &mut TestAppContext) {
+    use crate::models::ConnectionEditorSection;
+    let test_dir = TestConfigDir::new("nyaterm-acp-editor");
+    let (app, vcx) = hosted_editor(cx, test_dir.path(), 900., 900., 12.);
+    vcx.update(|_, cx| {
+        app.update(cx, |app, cx| {
+            app.set_connection_editor_kind(ConnectionKindTab::Acp, cx);
+            let draft = app.connection_state.active_editor_draft().unwrap();
+            assert_eq!(draft.sections(), &[ConnectionEditorSection::Basic]);
+        })
+    });
+    draw_editor(&app, vcx);
+    assert!(
+        vcx.debug_bounds("connection-editor-field-ShellPath")
+            .is_some()
+    );
+    assert!(
+        vcx.debug_bounds("connection-editor-field-WorkingDir")
+            .is_some()
+    );
+    assert!(
+        vcx.debug_bounds("connection-editor-field-ShellArgs")
+            .is_none()
+    );
+    assert!(vcx.debug_bounds("connection-editor-field-Host").is_none());
 }
 
 #[gpui::test]

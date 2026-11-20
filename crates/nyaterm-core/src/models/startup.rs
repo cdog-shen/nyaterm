@@ -10,6 +10,7 @@ use crate::models::connection::ConnectionType;
 
 pub fn supports_automatic_start(config: &ConnectionType) -> bool {
     match config {
+        ConnectionType::Acp { .. } => false,
         ConnectionType::Rdp { backend, .. } => backend != "mstsc",
         ConnectionType::Serial { connect_prompt, .. } => !connect_prompt.asks_anything(),
         _ => true,

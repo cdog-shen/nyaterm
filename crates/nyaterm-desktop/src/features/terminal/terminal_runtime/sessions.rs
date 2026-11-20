@@ -143,7 +143,10 @@ impl NyaTermApp {
         let mut closed_any = false;
         for close_id in &close_ids {
             let disconnected = self.session.is_disconnected(close_id);
-            let close_result = if matches!(
+            let close_result = if self.acp.contains(close_id) {
+                self.close_acp_session(close_id, cx);
+                Ok(())
+            } else if matches!(
                 self.android.kind(close_id),
                 Some(
                     nyaterm_core::models::android::AndroidViewKind::Files
@@ -280,7 +283,10 @@ impl NyaTermApp {
         }
         let was_active = self.session.active_id() == Some(pane_id.as_str());
         let disconnected = self.session.is_disconnected(&pane_id);
-        let close_result = if self.remote_desktop.is_session(&pane_id) {
+        let close_result = if self.acp.contains(&pane_id) {
+            self.close_acp_session(&pane_id, cx);
+            Ok(())
+        } else if self.remote_desktop.is_session(&pane_id) {
             self.close_remote_desktop_runtime(&pane_id)
         } else {
             self.session

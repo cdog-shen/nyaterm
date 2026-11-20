@@ -1636,6 +1636,27 @@ fn connection_password_input_replaces_or_removes_the_existing_secret_without_tri
 }
 
 #[test]
+fn acp_editor_placeholders_show_a_command_and_absolute_working_directory() {
+    use super::editor_logic::{ConnectionEditorPlaceholder, editor_field_seeds};
+    let draft = ConnectionEditorState {
+        kind: ConnectionKindTab::Acp,
+        ..connection_editor_state_with_secret_draft()
+    };
+    let seeds = editor_field_seeds(&draft);
+    let placeholder = |field| seeds.iter().find(|(key, _, _, _)| *key == field).unwrap().3;
+    assert_eq!(
+        placeholder(ConnectionEditorField::ShellPath),
+        ConnectionEditorPlaceholder::Literal("npx pi-acp")
+    );
+    let ConnectionEditorPlaceholder::Literal(directory) =
+        placeholder(ConnectionEditorField::WorkingDir)
+    else {
+        panic!("ACP needs an absolute path example")
+    };
+    assert!(std::path::Path::new(directory).is_absolute());
+}
+
+#[test]
 fn stored_password_placeholder_is_fixed_and_disappears_when_deleted_or_replaced() {
     use super::editor_logic::{ConnectionEditorPlaceholder, editor_field_seeds};
     use crate::models::ConnectionPasswordEdit;

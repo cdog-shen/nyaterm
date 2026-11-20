@@ -30,6 +30,8 @@ pub(super) enum ConnectionEditorValidationError {
     UsernameRequired,
     MissingAccount,
     ShellPathRequired,
+    AcpCommandInvalid,
+    AcpWorkingDirectoryInvalid,
     SerialPortRequired,
     BaudRateInvalid,
     RdpDisplayWidthInvalid,
@@ -316,6 +318,13 @@ pub(super) fn connection_editor_from_saved(
     };
 
     match connection.config {
+        ConnectionType::Acp {
+            command,
+            working_dir,
+        } => {
+            editor.shell_path = command;
+            editor.working_dir = working_dir;
+        }
         ConnectionType::Adb {
             device,
             directory,
@@ -527,6 +536,22 @@ pub(super) fn build_saved_connection_from_editor(
     editor: &ConnectionEditorState,
 ) -> Result<SavedConnection, ConnectionEditorValidationError> {
     let config = match editor.kind {
+        ConnectionKindTab::Acp => {
+            let command = editor.shell_path.trim();
+            let args = nyaterm_core::terminal::connection_input::parse_shell_args(command)
+                .map_err(|_| ConnectionEditorValidationError::AcpCommandInvalid)?;
+            if args.first().is_none_or(|program| program.trim().is_empty()) {
+                return Err(ConnectionEditorValidationError::AcpCommandInvalid);
+            }
+            let working_dir = editor.working_dir.trim();
+            if !std::path::Path::new(working_dir).is_absolute() {
+                return Err(ConnectionEditorValidationError::AcpWorkingDirectoryInvalid);
+            }
+            ConnectionType::Acp {
+                command: command.to_string(),
+                working_dir: working_dir.to_string(),
+            }
+        }
         ConnectionKindTab::Ssh => {
             let host = editor.host.trim().to_string();
             if host.is_empty() {
@@ -840,6 +865,7 @@ pub(super) fn build_saved_connection_from_editor(
             | ConnectionType::Vnc { host, port, .. } => {
                 format!("{host}:{port}")
             }
+            ConnectionType::Acp { command, .. } => command.clone(),
             ConnectionType::LocalTerminal { .. } => "Local Terminal".to_string(),
             // The device and rate name the connection, the same way a quick
             // serial link is titled. A connection that asks for the device when
@@ -1112,6 +1138,7 @@ pub(super) fn build_saved_connection_from_editor(
 /// Stable storage key for a connection kind's default session settings.
 pub(super) fn default_session_settings_kind_id(kind: ConnectionKindTab) -> &'static str {
     match kind {
+        ConnectionKindTab::Acp => "acp",
         ConnectionKindTab::Ssh => "ssh",
         ConnectionKindTab::Local => "local",
         ConnectionKindTab::Telnet => "telnet",
@@ -1845,6 +1872,42 @@ mod tests {
                 .ssh_algorithms,
             None
         );
+    }
+
+    #[test]
+    fn acp_connection_editor_validates_and_round_trips() {
+        let working_dir = std::env::current_dir()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let original: SavedConnection = serde_json::from_value(serde_json::json!({
+            "id":"acp-editor", "name":"Agent", "type":"acp", "command":"kimi acp",
+            "working_dir":working_dir, "future_root":{"keep":true}
+        }))
+        .unwrap();
+        let mut editor = connection_editor_from_saved(original.clone(), false);
+        let mut saved = build_saved_connection_from_editor(&editor).unwrap();
+        assert_eq!(saved.config, original.config);
+        saved.retain_extensions_from(&original).unwrap();
+        assert_eq!(
+            serde_json::to_value(saved).unwrap()["future_root"]["keep"],
+            true
+        );
+        for command in ["", "   ", "\"\"", "agent \"unfinished"] {
+            editor.shell_path = command.into();
+            assert!(
+                build_saved_connection_from_editor(&editor).is_err(),
+                "{command:?}"
+            );
+        }
+        editor.shell_path = "npx pi-acp".into();
+        for directory in ["", "relative/path"] {
+            editor.working_dir = directory.into();
+            assert!(
+                build_saved_connection_from_editor(&editor).is_err(),
+                "{directory:?}"
+            );
+        }
     }
 
     #[test]

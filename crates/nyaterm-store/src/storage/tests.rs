@@ -9262,6 +9262,67 @@ fn large_database_bootstrap_and_maintenance_benchmark() {
 }
 
 #[test]
+fn acp_connection_survives_database_reopen_and_portable_backup() {
+    let dir = unique_temp_dir("acp-compatibility");
+    let target_dir = unique_temp_dir("acp-backup-target");
+    let connection: SavedConnection = serde_json::from_value(serde_json::json!({
+        "id":"acp-test", "name":"Agent", "type":"acp",
+        "command":"kimi acp", "working_dir":"/workspace", "future_root":{"keep":1}
+    }))
+    .unwrap();
+    {
+        let store = ConnectionStore::open(&dir).unwrap();
+        store.save_connection(&connection).unwrap();
+        let mut snapshot = store
+            .build_raw_portable_snapshot(
+                nyaterm_core::PortableSnapshotKind::Backup,
+                "fixture",
+                "test",
+            )
+            .unwrap();
+        snapshot.recalculate_hash().unwrap();
+        let target = ConnectionStore::open(&target_dir).unwrap();
+        target.apply_raw_portable_snapshot(&snapshot).unwrap();
+        let restored =
+            serde_json::to_value(target.get_connection("acp-test").unwrap().unwrap()).unwrap();
+        assert_eq!(restored["type"], "acp");
+        assert_eq!(restored["command"], "kimi acp");
+        assert_eq!(restored["working_dir"], "/workspace");
+        assert_eq!(restored["future_root"]["keep"], 1);
+        drop(target);
+
+        let sync_dir = unique_temp_dir("acp-sync-target");
+        let mut sync = store
+            .build_raw_portable_snapshot(
+                nyaterm_core::PortableSnapshotKind::Sync,
+                "fixture",
+                "test",
+            )
+            .unwrap();
+        sync.recalculate_hash().unwrap();
+        let target = ConnectionStore::open(&sync_dir).unwrap();
+        target.apply_raw_portable_snapshot(&sync).unwrap();
+        let synced =
+            serde_json::to_value(target.get_connection("acp-test").unwrap().unwrap()).unwrap();
+        assert_eq!(synced["type"], "acp");
+        assert_eq!(synced["command"], "kimi acp");
+        assert_eq!(synced["working_dir"], "/workspace");
+        assert_eq!(synced["future_root"]["keep"], 1);
+        drop(target);
+        std::fs::remove_dir_all(sync_dir).unwrap();
+    }
+    let store = ConnectionStore::open(&dir).unwrap();
+    let loaded = serde_json::to_value(store.get_connection("acp-test").unwrap().unwrap()).unwrap();
+    assert_eq!(loaded["type"], "acp");
+    assert_eq!(loaded["command"], "kimi acp");
+    assert_eq!(loaded["working_dir"], "/workspace");
+    assert_eq!(loaded["future_root"]["keep"], 1);
+    drop(store);
+    std::fs::remove_dir_all(dir).unwrap();
+    std::fs::remove_dir_all(target_dir).unwrap();
+}
+
+#[test]
 fn android_connections_and_adb_path_survive_database_reopen() {
     let dir = unique_temp_dir("android-compatibility");
     let mut connection: SavedConnection = serde_json::from_value(serde_json::json!({"id":"android-test","name":"Android","type":"adb","device":{"kind":"tcp","host":"example.test","port":5555},"screen":{"max_fps":60,"future":true},"future_root":{"keep":1}})).unwrap();

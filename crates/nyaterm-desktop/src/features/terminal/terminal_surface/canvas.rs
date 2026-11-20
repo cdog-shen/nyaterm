@@ -1348,6 +1348,7 @@ fn terminal_render_profile(render_degraded: bool) -> TerminalRenderProfile {
 
 fn terminal_canvas_session_kind_label(config: &SessionLaunchConfig) -> &'static str {
     match config {
+        SessionLaunchConfig::Acp(_) => "ACP",
         SessionLaunchConfig::Local(_) => "Local",
         SessionLaunchConfig::Ssh(_) => "SSH",
         SessionLaunchConfig::Telnet(config) if config.raw_tcp => "Raw TCP",

@@ -133,7 +133,9 @@ impl NyaTermApp {
                 .workspace_reconnect_failed_state(session_id, error, cx)
                 .into_any_element();
         }
-        let content = if matches!(
+        let content = if self.acp.contains(&session_id) {
+            self.acp_view(session_id.clone(), cx)
+        } else if matches!(
             self.android.kind(&session_id),
             Some(
                 nyaterm_core::models::android::AndroidViewKind::Files
@@ -201,6 +203,10 @@ impl NyaTermApp {
                     .cursor_pointer()
                     .on_click(cx.listener(move |this, _, window, cx| {
                         this.activate_workspace_pane(focus_id.clone(), cx);
+                        if this.acp.contains(&focus_id) {
+                            this.focus_acp_composer(&focus_id, window, cx);
+                            return;
+                        }
                         if this.android.kind(&focus_id)
                             == Some(nyaterm_core::models::android::AndroidViewKind::Files)
                         {
@@ -336,6 +342,69 @@ mod tests {
             });
             div().size_full().flex().child(content)
         }
+    }
+
+    #[test]
+    fn acp_workspace_pane_preserves_composer_focus_and_input() {
+        use crate::models::WorkspacePaneNode;
+        use nyaterm_core::SavedConnection;
+
+        struct AcpPaneHost {
+            app: Entity<NyaTermApp>,
+            session_id: String,
+        }
+        impl Render for AcpPaneHost {
+            fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+                let id = self.session_id.clone();
+                self.app.update(cx, |app, cx| {
+                    app.render_workspace_pane_node(WorkspacePaneNode::Leaf { session_id: id }, cx)
+                })
+            }
+        }
+
+        let root = TestTempDir::new("nyaterm-acp-pane-focus");
+        let mut cx = TestAppContext::single();
+        cx.update(nyaterm_ui::init_components);
+        let _cleanup = crate::test_support::TestAppCleanup::new(&cx);
+        let app = app_with_visible_local_session(&mut cx, root.path(), "s0");
+        let id = cx.update_entity(&app, |app, cx| {
+            app.sync_component_theme(cx);
+            let connection: SavedConnection = serde_json::from_value(serde_json::json!({
+                "id":"acp-focus", "name":"ACP", "type":"acp",
+                "command":"nyaterm-missing-acp-focus", "working_dir": root.path().to_string_lossy()
+            }))
+            .unwrap();
+            app.start_acp_connection(connection, Default::default(), cx);
+            app.session.active_id().unwrap().to_string()
+        });
+        let host = app.clone();
+        let target = id.clone();
+        let (_, window) = cx.add_window_view(move |_, _| AcpPaneHost {
+            app: host,
+            session_id: target,
+        });
+        window.update(|window, cx| {
+            window.activate_window();
+            let _ = window.draw(cx);
+        });
+        window.run_until_parked();
+        let input = window.debug_bounds("acp-composer-input").unwrap();
+        window.simulate_click(input.center(), gpui::Modifiers::default());
+        window.simulate_input("typed in ACP");
+        window.update(|window, cx| {
+            let app = app.read(cx);
+            let input = app
+                .acp
+                .session(&id)
+                .unwrap()
+                .input
+                .as_ref()
+                .unwrap()
+                .read(cx);
+            assert_eq!(input.value(cx), "typed in ACP");
+            assert!(input.component_focus_handle(cx).is_focused(window));
+            assert!(!app.terminal.input_focus().is_focused(window));
+        });
     }
 
     #[test]
