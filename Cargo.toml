@@ -60,6 +60,7 @@ license = "Apache-2.0"
 repository = "https://github.com/nyakang/nyaterm"
 
 [workspace.dependencies]
+agent-client-protocol = { version = "=5.4.0", default-features = false }
 nyaterm-completion-runtime = { path = "crates/nyaterm-completion-runtime" }
 nyaterm-i18n = { path = "crates/nyaterm-i18n" }
 nyaterm-android = { path = "crates/nyaterm-android" }

@@ -5,6 +5,8 @@ use std::process::{Child, Command};
 
 pub(crate) struct AgentChild {
     child: Child,
+    #[cfg(unix)]
+    process_group: Option<libc::pid_t>,
     #[cfg(windows)]
     job: windows::Job,
 }
@@ -20,8 +22,16 @@ impl AgentChild {
             command.creation_flags(CREATE_NO_WINDOW | CREATE_SUSPENDED);
             windows::Job::new()?
         };
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt as _;
+            command.process_group(0);
+        }
+        let child = command.spawn()?;
         let owner = Self {
-            child: command.spawn()?,
+            #[cfg(unix)]
+            process_group: Some(child.id() as libc::pid_t),
+            child,
             #[cfg(windows)]
             job,
         };
@@ -38,6 +48,11 @@ impl AgentChild {
     }
 
     pub(crate) fn terminate(&mut self) {
+        #[cfg(unix)]
+        if let Some(group) = self.process_group.take() {
+            // SAFETY: the group was created exclusively for this child; signal it only once.
+            unsafe { libc::killpg(group, libc::SIGKILL) };
+        }
         #[cfg(windows)]
         self.job.terminate();
         let _ = self.child.kill();
@@ -211,5 +226,46 @@ mod windows {
             // SAFETY: terminate only the private job owning this CLI and descendants.
             unsafe { TerminateJobObject(self.0.as_raw_handle(), 1) };
         }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod unix_tests {
+    use std::io::{BufRead, BufReader, Read};
+    use std::process::{Command, Stdio};
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    use super::AgentChild;
+
+    #[test]
+    fn terminating_non_exec_wrapper_closes_descendant_pipes() {
+        let mut command = Command::new("/bin/sh");
+        command
+            .args(["-c", "sleep 30 & echo $!; wait"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
+        let mut child = AgentChild::spawn(&mut command).unwrap();
+        let mut stdout = BufReader::new(child.child_mut().stdout.take().unwrap());
+        let mut line = String::new();
+        stdout.read_line(&mut line).unwrap();
+        let pid = line.trim().to_owned();
+        assert!(!pid.is_empty());
+        let (tx, rx) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            child.terminate();
+            let mut rest = Vec::new();
+            let _ = stdout.read_to_end(&mut rest);
+            let _ = tx.send(());
+        });
+        let finished = rx.recv_timeout(Duration::from_secs(2)).is_ok();
+        if !finished {
+            let _ = Command::new("kill").args(["-KILL", &pid]).status();
+        }
+        worker.join().unwrap();
+        assert!(
+            finished,
+            "descendant retained the output pipe after cleanup"
+        );
     }
 }

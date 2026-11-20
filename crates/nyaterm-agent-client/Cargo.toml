@@ -7,12 +7,18 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+agent-client-protocol.workspace = true
+futures.workspace = true
+tokio.workspace = true
 nyaterm-core.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
 nyaterm-core = { workspace = true, features = ["test-support"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [

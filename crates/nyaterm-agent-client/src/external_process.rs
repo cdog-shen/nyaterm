@@ -38,6 +38,10 @@ impl ExternalAgentChild {
         self.child_mut().stderr.take()
     }
 
+    pub(crate) fn add_reader(&mut self, reader: JoinHandle<()>) {
+        self.readers.push(reader);
+    }
+
     pub fn capture_output(
         &mut self,
         worker_name: &'static str,
